@@ -1,11 +1,10 @@
-const http = require("http");
+const { verify } = require('crypto');
+const express = require('express')
+const app = express();
 const net = require('net');
-const fs = require('fs');
 const sendAlert = require('./sendAlert');
-let rawdata = fs.readFileSync('healthChecks.json');
-let healthChecks = JSON.parse(rawdata);
 
-const host = 'localhost';
+app.use(express.json()) 
 const port = 8000;
 
 const run = function(healthCheckOptions) {
@@ -45,18 +44,16 @@ const run = function(healthCheckOptions) {
 };
 
 const requestListener = function (req, res) {
-    healthChecks.checks.forEach(checkOption => {
-        response = run(checkOption)
-        if (!response.ok){
-            sendAlert.alert(response, checkOption)
-        }
-    });
-    res.writeHead(200);
-    res.end("Health checks completed!");
+    const checkOptions = req.body;
+    response = run(checkOptions)
+    
+    if (!response.ok){
+        sendAlert.alert(response, checkOptions)
+    }    
+
+    res.send("Health checks completed!");
 };
 
-const server = http.createServer(requestListener);
-server.listen(port, host, () => {    
-    console.log(`Server is running on http://${host}:${port}`);
-});
+app.listen(port)
 
+app.post('/healthCheck', requestListener)
