@@ -1,60 +1,43 @@
-const { verify } = require('crypto');
 const express = require('express')
 const app = express();
-const net = require('net');
+const axios = require('axios');
 const sendAlert = require('./sendAlert');
 
 app.use(express.json()) 
 const hostname = "localhost"
 const port = 8000;
 
-const run = function(healthCheckOptions) {
-    
-    const socket = net.connect(healthCheckOptions.port, healthCheckOptions.hostname);
+const runChecks = function(healthCheckOptions) {       
+    return axios({
+        url: healthCheckOptions.url,
+        method: healthCheckOptions.method || 'HEAD',
+        headers: healthCheckOptions.headers || {},
+        timeout: healthCheckOptions.timeout
+    })    
 
-    return new Promise(resolve => {
-        let response = {};
-        const timer = setTimeout(() => {
-            socket.destroy();
-            response.ok = false;
-            response.result = '[503] Gateway error';
-            response.checkedAt = new Date();
-            console.error(`Health check "${healthCheckOptions.name}" failed: ${response.result}`);    
-            resolve(response)
-        }, healthCheckOptions.timeout);
-
-
-        socket.on('connect', () => {
-            clearTimeout(timer);
-            socket.destroy();
-            response.ok = true;
-            response.result = '[200] OK';
-            response.checkedAt = new Date();
-            console.log(`Health check "${healthCheckOptions.name}" succeeded: ${response.result}`)        
-            resolve(response)
-        });
-
-        socket.on('error', error => {
-            clearTimeout(timer);
-            socket.destroy();
-            response.ok = false;
-            response.result = error.message;
-            response.checkedAt = new Date();
-            console.error(`Health check "${healthCheckOptions.name}" failed: ${error.message}`);    
-            resolve(response)
-        });
-    });
 };
 
 const requestListener = function (req, res) {
-    const checkOptions = req.body;
-    run(checkOptions).then((response) => {
-        if (!response.ok){
+    const checkOptions = req.body;    
+    let response = {};
+    runChecks(checkOptions).then(() => {
+        response.ok = true;
+        response.checkOutput = '';
+        response.checkedAt = new Date();        
+        res.send(`[200] Successful`);
+    })
+    .catch(error => {
+        response.ok = false;
+        response.checkOutput = error.message;
+        response.checkedAt = new Date();        
+        console.error(`Health check "${checkOptions.name}" failed: ${error.message}`);
+        res.send(`${error.message}`)
+        return response;
+    }).finally(() => {        
+        if(!response.ok)
             sendAlert.alert(response, checkOptions)
-        }    
-    });    
-
-    res.send("Health checks completed!");
+    })
+    
 };
 
 app.listen(port, hostname, () => {
