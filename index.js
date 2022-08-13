@@ -40,7 +40,7 @@ const requestListener = function (req, res) {
     
 };
 
-app.listen(port, hostname, () => {
+app.listen(port, () => {
     console.log(`Health check service running on http://${hostname}:${port}`);
 })
 
