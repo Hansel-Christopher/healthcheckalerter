@@ -6,7 +6,7 @@ publishToSns = function(response, checkOption) {
 
     let status = response.ok ? "HEALTHY" : "UNHEALTHY"
     var params = {
-        Message: `Check: ${checkOption.name}; Endpoint: ${checkOption.healthChecks.url}; Status: ${status}; BusinessImpact: ${checkOption.healthChecks.businessImpact}; CheckedAt: ${response.checkedAt}`,
+        Message: `Check: ${checkOption.name}; Endpoint: ${checkOption.healthChecks.url}; Status: ${status}; BusinessImpact: ${checkOption.healthChecks.businessImpact}; CheckedAt: ${response.checkedAt}; Info: ${response.checkOutput}`,
         TopicArn: 'arn:aws:sns:us-west-2:609850474485:sample-alerting'
     };
 

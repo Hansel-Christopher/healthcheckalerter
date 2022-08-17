@@ -56,7 +56,7 @@ const runChecks = function(job) {
         timeout: job.healthChecks.timeout
     }).then(() => {
         response.ok = true;
-        response.checkOutput = '';
+        response.checkOutput = '200';
         response.checkedAt = new Date();                
     })
     .catch(error => {
@@ -66,8 +66,7 @@ const runChecks = function(job) {
         console.error(`Health check "${job.name}" failed: ${error.message}`);        
         return response;
     }).finally(() => {        
-        if(!response.ok)            
-            sendAlert.alert(response, job)            
+        sendAlert.alert(response, job)            
     })
 
 };
